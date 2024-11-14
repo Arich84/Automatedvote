@@ -30,7 +30,7 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-ALLOWED_HOST = ['*']
+ALLOWED_HOST = [https://automatedvote.onrender.com,]
 
 
 import os
@@ -216,8 +216,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Media files settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
-DATABASE_ROUTERS = ['app1.database_router.CustomUserDatabaseRouter',
-                    'comparison.database_router.ComparisonDatabaseRouter']
 
 
 # Default primary key field type
