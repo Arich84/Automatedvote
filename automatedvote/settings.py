@@ -30,7 +30,7 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-ALLOWED_HOST = [https://automatedvote.onrender.com,]
+ALLOWED_HOST = ["*"]
 
 
 import os
