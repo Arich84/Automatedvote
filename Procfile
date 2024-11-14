@@ -1,1 +1,1 @@
-web: gunicorn automatedvote.wsgi
+web: gunicorn automatedvote.wsgi --log-file-
