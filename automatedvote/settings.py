@@ -30,7 +30,8 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-ALLOWED_HOST = ["automatedvote.up.railway.app"]
+ALLOWED_HOST = ['automatedvote.up.railway.app']
+CSRF_TRUSTED_ORGINS = ['https://automatedvote.up.railway.app']
 
 
 import os
