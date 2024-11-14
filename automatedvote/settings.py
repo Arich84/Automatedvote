@@ -30,8 +30,8 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'automatedvote.up.railway.app', 'automatedvote.onrender.com']
-CSRF_TRUSTED_ORIGINS = ['https://automatedvote.up.railway.app', 'https://automatedvote.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'vfpog.up.railway.app', 'automatedvote.onrender.com']
+CSRF_TRUSTED_ORIGINS = ['https://vfpog.up.railway.app', 'https://automatedvote.onrender.com']
 
 
 import os
