@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('api/home-data/', views.home_data_api, name='home-data-api'),
+    path('api/get-slides/', views.get_active_slides, name='get_slides'),
     path('dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
     path('get_remaining_time/', views.get_remaining_time, name='get_remaining_time'),
     path('about/', views.about, name='about'),

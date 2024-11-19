@@ -147,7 +147,24 @@ DATABASES = {
 }
 
 
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'default_db',
+#         'USER': 'richman',
+#         'PASSWORD': '2580',
+#         'HOST': 'localhost',
+#         'PORT': '5433',
+#     },
+#     'Comparison': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'comparison_db',
+#         'USER': 'richman',
+#         'PASSWORD': '2580',
+#         'HOST': 'localhost',
+#         'PORT': '5433',
+#     }
+# }
 
 
 

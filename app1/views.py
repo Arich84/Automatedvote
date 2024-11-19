@@ -313,7 +313,7 @@ def candidates_view(request):
     candidates = CandidateApplication.objects.filter(status='approved').select_related('position')
     return render(request, 'candidates.html', {'candidates': candidates})
 
-#hmoe
+#home
 def home(request):
      # Redirect based on user roles first
         # Initialize unread messages count
@@ -324,12 +324,12 @@ def home(request):
         ).count()
     
     
-    announcements = Announcement.objects.all().order_by('-created_at')
+    
      
     # Get the active registration, preparation, and voting windows
      # Get candidates with their total vote count
     candidates = CandidateApplication.objects.filter(status='approved').select_related('position')
-
+    announcements = Announcement.objects.all().order_by('-created_at')
     registration_window = RegistrationWindow.objects.first()
     preparation_window = PreparationWindow.objects.first()
     voting_window = VotingWindow.objects.first()
@@ -372,6 +372,83 @@ def home(request):
     }
 
     return render(request, 'home.html', context)
+
+
+
+from django.http import JsonResponse
+from .models import Slide
+
+def get_active_slides(request):
+    # Get active slides from the database
+    active_slides = Slide.objects.filter(is_active=True)
+
+    # Prepare data to send to the front-end
+    slides_data = [
+        {
+            'image': slide.image.url,
+            'title': slide.title,
+            'description': slide.description
+        }
+        for slide in active_slides
+    ]
+
+    return JsonResponse({'slides': slides_data})
+
+
+
+
+from django.http import JsonResponse
+from django.utils import timezone
+
+def home_data_api(request):
+    announcements = Announcement.objects.all().order_by('-created_at')
+    registration_window = RegistrationWindow.objects.first()
+    preparation_window = PreparationWindow.objects.first()
+    voting_window = VotingWindow.objects.first()
+    candidates = CandidateApplication.objects.filter(status='approved').select_related('position')
+
+    # Initialize variables for tracking
+    registration_active, preparation_active, voting_active = False, False, False
+    registration_remaining, preparation_remaining = None, None
+
+    # Handle registration window logic
+    if registration_window and registration_window.is_active():
+        registration_active = True
+        registration_remaining = (registration_window.end_time - timezone.now()).total_seconds()
+
+    # Handle preparation window logic
+    elif preparation_window and preparation_window.is_active():
+        preparation_active = True
+        preparation_remaining = (preparation_window.end_time - timezone.now()).total_seconds()
+
+    # Handle voting window logic
+    elif voting_window and voting_window.is_active():
+        voting_active = True
+
+    # Prepare data for the response
+    data = {
+        'announcements': [
+            {'title': a.title, 'content': a.content, 'created_at': a.created_at.strftime('%B %d, %Y, %I:%M %p')}
+            for a in announcements
+        ],
+        'registration_active': registration_active,
+        'preparation_active': preparation_active,
+        'voting_active': voting_active,
+        'registration_remaining': registration_remaining,
+        'preparation_remaining': preparation_remaining,
+        'candidates': [
+            {
+                'name': f"{c.user.first_name} {c.user.last_name}",
+                'position': c.position.name,
+                'votes': c.total_votes
+            }
+            for c in candidates
+        ],
+    }
+
+    return JsonResponse(data)
+
+
 
 
 #Election phase
@@ -1259,15 +1336,18 @@ def admin_dashboard(request):
     User = get_user_model()
 
     # Get statistics
+    regular_users_count = CustomUser.objects.filter(user_type='user').count()
+    
     verifiy_users = User.objects.filter(is_active=True).count()
     total_users = User.objects.count()
     active_users = UserActivity.objects.filter(last_activity__gte=timezone.now() - timedelta(minutes=5)).count()
-    total_admins = User.objects.filter(is_staff=True).count()
+    total_admins = User.objects.filter(is_staff=True,user_type='admin').count()
 
     # Debug print to verify the values
     print(f"Total Users: {total_users}, Active Users: {active_users}, Total Admins: {total_admins}")
 
     context = {
+        'regular_users_count': regular_users_count,
         'total_users': total_users,
         'active_users': active_users,
         'total_admins': total_admins,
@@ -1276,6 +1356,9 @@ def admin_dashboard(request):
 
     return render(request, 'admin_dashboard.html', context)
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 @login_required
 def superuser_dashboard(request):
     if request.user.user_type != 'superuser':
@@ -1288,8 +1371,9 @@ def superuser_dashboard(request):
     
     # Adjust these queries based on how you categorize users
     total_candidates = User.objects.filter(user_type='candidate').count()  # Replace 'candidate' with your actual type if necessary
-    total_admin = User.objects.filter(is_staff=True, is_superuser=False).count()
-    total_superuser = User.objects.filter(is_superuser=True).count()
+    total_admin = User.objects.filter(is_staff=True, user_type='admin').count()
+
+    total_superuser = User.objects.filter(is_superuser=True,user_type='superuser').count()
 
     context = {
         'total_users': total_users,

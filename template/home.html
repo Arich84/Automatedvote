@@ -319,6 +319,24 @@
                 margin-left: 0;
             }
         }
+
+       
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 80%; /* Reduce width for smaller screens */
+    }
+
+    .sidebar-toggle-btn {
+        display: block; /* Show the toggle button */
+    }
+
+    .main-container {
+        margin-left: 0; /* Ensure content is aligned properly */
+    }
+}
+
     </style>
 </head>
 <body>
@@ -475,9 +493,7 @@
                     </p>
                 {% endfor %}
             </div>
-        </section>
-        
-        
+        </section>    
         {% else %}
             <section>
                 <h2>No Active Events</h2>
@@ -489,23 +505,14 @@
         <!-- Slider Section -->
         <div class="slider-section">
             <div class="slider-container">
-                {% for slide in slides %}
-                    {% if slide.is_active %}
-                        <div class="slide">
-                            <img src="{{ slide.image.url }}" alt="{{ slide.title }}">
-                            <div class="slide-text">
-                                <h3>{{ slide.title }}</h3>
-                                <p>{{ slide.description }}</p>
-                            </div>
-                        </div>
-                    {% endif %}
-                {% endfor %}
+                <!-- Slides will be inserted dynamically by JavaScript -->
             </div>
             <div class="slider-nav">
-                <button class="prev" onclick="prevSlide()">❮</button>
-                <button class="next" onclick="nextSlide()">❯</button>
+                <button class="prev">❮</button>
+                <button class="next">❯</button>
             </div>
         </div>
+        
 
         <!-- Vote Section -->
         <div class="vote-section">
@@ -552,7 +559,12 @@
    
     
     <!-- results.html -->
-
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+    </script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{% static 'js/theme.js' %}"></script>
     <script>
@@ -603,14 +615,11 @@ setInterval(function () {
         })
         .catch(error => console.error('Error fetching live results:', error));
 }, 5000);  // Update every 5 seconds
+</script>
 
-
-
-        
-    </script>
 
 <script>
-    // Function to handle countdown
+    // Function to handle countdown timers
     function startCountdown(timeRemaining, elementId) {
         let seconds = timeRemaining;
 
@@ -621,7 +630,9 @@ setInterval(function () {
             const secs = Math.floor(seconds % 60);
 
             const element = document.getElementById(elementId);
-            element.textContent = `${days}d ${hours}h ${minutes}m ${secs}s`;
+            if (element) {
+                element.textContent = `${days}d ${hours}h ${minutes}m ${secs}s`;
+            }
 
             if (seconds > 0) {
                 seconds--;
@@ -634,68 +645,194 @@ setInterval(function () {
         const timerInterval = setInterval(updateCountdown, 1000);
     }
 
-    // Registration countdown
-    const registrationRemaining = parseInt("{{ registration_remaining|default:0 }}", 10);
-    if (registrationRemaining > 0) {
-        startCountdown(registrationRemaining, 'registration-timer');
+    // Function to check notifications
+    function checkNotifications() {
+        $.ajax({
+            url: '{% url "check_notifications" %}', // URL to check notifications
+            method: 'GET',
+            success: function (response) {
+                const unreadCount = response.unread_notifications;
+
+                // If unread notifications exist, show the count
+                if (unreadCount > 0) {
+                    $('#notif-icon').text(unreadCount).show();
+                } else {
+                    $('#notif-icon').hide();
+                }
+            },
+            error: function (error) {
+                console.error('Error checking notifications:', error);
+            }
+        });
     }
 
-    // Preparation countdown
-    const preparationRemaining = parseInt("{{ preparation_remaining|default:0 }}", 10);
-    if (preparationRemaining > 0) {
-        startCountdown(preparationRemaining, 'preparation-timer');
-    }
-</script>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.classList.toggle('hidden');
-        }
-    </script>
-    
-    <script>
-        // Check for new notifications every 5 seconds
-        function checkNotifications() {
-            $.ajax({
-                url: '{% url "check_notifications" %}',  // URL to check notifications
-                method: 'GET',
-                success: function(response) {
-                    const unreadCount = response.unread_notifications;
-        
-                    // If unread notifications exist, show the count
-                    if (unreadCount > 0) {
-                        $('#notif-icon').text(unreadCount).show();
-                    } else {
-                        $('#notif-icon').hide();
-                    }
-                },
-                error: function(error) {
-                    console.error('Error checking notifications:', error);
-                }
-            });
-        }
-        
-        // Poll for notifications every 5 seconds
-        setInterval(checkNotifications, 5000);
-        
-        // Call it immediately when the page loads to get the current state
-        checkNotifications();
-    
-        // Mark notifications as read when the user clicks on the notification icon
-        $('#notif-icon').click(function() {
-            $.ajax({
-                url: '{% url "mark_notifications_as_read" %}',  // URL to mark notifications as read
-                method: 'POST',
-                success: function(response) {
-                    console.log('Notifications marked as read');
-                    $('#notif-icon').hide();  // Hide the notification icon after marking as read
-                },
-                error: function(error) {
-                    console.error('Error marking notifications as read:', error);
-                }
-            });
+    // Mark notifications as read when the user clicks on the notification icon
+    $('#notif-icon').click(function () {
+        $.ajax({
+            url: '{% url "mark_notifications_as_read" %}', // URL to mark notifications as read
+            method: 'POST',
+            success: function () {
+                console.log('Notifications marked as read');
+                $('#notif-icon').hide(); // Hide the notification icon after marking as read
+            },
+            error: function (error) {
+                console.error('Error marking notifications as read:', error);
+            }
         });
+    });
+
+    // Function to fetch and update home data
+    function fetchHomeData() {
+        fetch('/api/home-data/')
+            .then(response => response.json())
+            .then(data => {
+                // Update Announcements Section
+                const announcementsContainer = document.querySelector('.announcements-container');
+                announcementsContainer.innerHTML = '';
+                if (data.announcements.length > 0) {
+                    data.announcements.forEach(a => {
+                        announcementsContainer.innerHTML += `
+                            <div class="announcement-item">
+                                <h3>${a.title}</h3>
+                                <p>${a.content}</p>
+                                <small>Posted on ${a.created_at}</small>
+                            </div>`;
+                    });
+                } else {
+                    announcementsContainer.innerHTML = '<p>No announcements at the moment.</p>';
+                }
+
+                // Update Countdown Section
+                const countdownSection = document.querySelector('.countdown-section');
+                countdownSection.innerHTML = ''; // Clear existing content
+                if (data.registration_active) {
+                    countdownSection.innerHTML = `
+                        <section>
+                            <h2>Registration is Open!</h2>
+                            <p>Time remaining to register:</p>
+                            <div id="registration-timer"></div>
+                        </section>`;
+                    startCountdown(Math.floor(data.registration_remaining), 'registration-timer');
+                } else if (data.preparation_active) {
+                    countdownSection.innerHTML = `
+                        <section>
+                            <h2>Preparation Period</h2>
+                            <p>Preparation time remaining:</p>
+                            <div id="preparation-timer"></div>
+                        </section>`;
+                    startCountdown(Math.floor(data.preparation_remaining), 'preparation-timer');
+                } else if (data.voting_active) {
+                    const liveResults = data.candidates.map(c =>
+                        `<p>${c.votes} votes - ${c.name} (${c.position})</p>`
+                    ).join('');
+                    countdownSection.innerHTML = `
+                        <section>
+                            <h2>Live Voting</h2>
+                            <div id="live-results">${liveResults}</div>
+                        </section>`;
+                } else {
+                    // No active events
+                    countdownSection.innerHTML = `
+                        <section>
+                            <h2>No Active Events</h2>
+                        </section>`;
+                }
+            })
+            .catch(err => console.error('Error fetching data:', err));
+    }
+
+    // Poll for notifications and home data every 5 seconds
+    setInterval(() => {
+        checkNotifications();
+        fetchHomeData();
+    }, 5000);
+
+    // Initial calls
+    checkNotifications();
+    fetchHomeData();
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let currentSlide = 0;
+        let slides = [];
+        const sliderContainer = document.querySelector('.slider-container');
+    
+        // Function to update the slide position
+        function updateSlidePosition() {
+            const offset = -currentSlide * 100; // Offset for sliding
+            sliderContainer.style.transform = `translateX(${offset}%)`;
+        }
+    
+        // Function to move to the next slide
+        function nextSlide() {
+            if (slides.length === 0) return; // Prevent error if no slides
+            currentSlide = (currentSlide + 1) % slides.length;
+            updateSlidePosition();
+        }
+    
+        // Function to move to the previous slide
+        function prevSlide() {
+            if (slides.length === 0) return; // Prevent error if no slides
+            currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+            updateSlidePosition();
+        }
+    
+        // Function to fetch slides from the server
+        function fetchSlides() {
+            fetch('/api/get-slides/')
+                .then(response => response.json())
+                .then(data => {
+                    const newSlides = data.slides || [];
+                    
+                    // Check if the slide data has changed
+                    if (JSON.stringify(slides) !== JSON.stringify(newSlides)) {
+                        slides = newSlides;
+    
+                        if (slides.length > 0) {
+                            // Dynamically create slide elements
+                            sliderContainer.innerHTML = ''; // Clear previous slides
+                            slides.forEach(slide => {
+                                const slideElement = document.createElement('div');
+                                slideElement.classList.add('slide');
+                                slideElement.innerHTML = `
+                                    <img src="${slide.image}" alt="${slide.title}">
+                                    <div class="slide-text">
+                                        <h3>${slide.title}</h3>
+                                        <p>${slide.description}</p>
+                                    </div>
+                                `;
+                                sliderContainer.appendChild(slideElement);
+                            });
+                            updateSlidePosition(); // Initial position update
+                        } else {
+                            sliderContainer.innerHTML = '';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching slides:', error);
+                });
+        }
+    
+        // Auto-slide functionality
+        setInterval(nextSlide, 5000); // Change slide every 5 seconds
+    
+        // Event listeners for buttons
+        document.querySelector('.next').addEventListener('click', nextSlide);
+        document.querySelector('.prev').addEventListener('click', prevSlide);
+    
+        // Fetch slides data on page load
+        fetchSlides();
+    
+        // Poll for new slides every 10 seconds to keep it updated
+        setInterval(fetchSlides, 10000); // Fetch slides every 10 seconds
+    });
     </script>
+    
+
+
+
     
     
 </body>
