@@ -1373,7 +1373,8 @@ def superuser_dashboard(request):
     total_candidates = User.objects.filter(user_type='candidate').count()  # Replace 'candidate' with your actual type if necessary
     total_admin = User.objects.filter(is_staff=True, user_type='admin').count()
 
-    total_superuser = User.objects.filter(is_superuser=True,user_type='superuser').count()
+    total_superuser = User.objects.filter(is_superuser=True).count()
+
 
     context = {
         'total_users': total_users,
